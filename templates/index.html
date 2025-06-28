@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 添加 DNS 预连接 -->
+    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <title>文件处理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36D399',
+                        neutral: '#F8FAFC',
+                        dark: '#1E293B',
+                        error: '#F87272',
+                        success: '#10B981'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .drop-shadow-soft {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #165DFF 0%, #3B82F6 100%);
+            }
+            .hover-scale {
+                transition: transform 0.2s ease-in-out;
+            }
+            .hover-scale:hover {
+                transform: scale(1.02);
+            }
+            .file-icon {
+                @apply w-8 h-8 flex items-center justify-center rounded bg-primary/10 text-primary;
+            }
+            .progress-bar {
+                @apply h-2 bg-gray-200 rounded-full overflow-hidden;
+            }
+            .progress-value {
+                @apply h-full bg-secondary transition-all duration-500 ease-out;
+            }
+            .table {
+                @apply w-full border-collapse;
+            }
+            .table th, .table td {
+                @apply border border-gray-300 px-4 py-2;
+            }
+            .table-striped tbody tr:nth-child(odd) {
+                @apply bg-gray-100;
+            }
+            .table-hover tbody tr:hover {
+                @apply bg-gray-200;
+            }
+            .evaluation-option {
+                @apply relative flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-300;
+            }
+            .evaluation-option input[type="radio"] {
+                @apply hidden;
+            }
+            .evaluation-option .checkmark {
+                @apply absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-gray-300 rounded-full transition-all duration-200;
+            }
+            .evaluation-option input[type="radio"]:checked ~ .checkmark {
+                @apply border-primary bg-primary;
+            }
+            .evaluation-option input[type="radio"]:checked ~ .checkmark:after {
+                @apply content-[''] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full;
+            }
+            .evaluation-option input[type="radio"]:checked ~ .option-content {
+                @apply text-primary;
+            }
+            .evaluation-option:hover {
+                @apply border-primary/50 bg-primary/5;
+            }
+            .option-content {
+                @apply ml-10 text-gray-700 transition-colors duration-200;
+            }
+            .custom-input {
+                @apply w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200;
+            }
+            .input-container {
+                @apply relative mb-4;
+            }
+            .input-label {
+                @apply absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 transition-all duration-200 pointer-events-none;
+            }
+            .custom-input:focus + .input-label,
+            .custom-input:not(:placeholder-shown) + .input-label {
+                @apply top-0 left-3 text-xs text-primary bg-white px-1;
+            }
+            .serial-number-error {
+                @apply border-error animate-shake;
+            }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            }
+            .disabled-area {
+                @apply opacity-70 cursor-not-allowed;
+            }
+            .disabled-area * {
+                @apply pointer-events-none;
+            }
+            .details-container {
+                @apply max-h-0 overflow-hidden transition-all duration-300 ease-in-out;
+            }
+            .details-expanded {
+                @apply max-h-96;
+            }
+            .details-content {
+                @apply opacity-0 transition-opacity duration-300 ease-in-out;
+            }
+            .details-expanded .details-content {
+                @apply opacity-100;
+            }
+            .expand-btn {
+                @apply text-sm text-primary hover:text-primary/80 transition-colors duration-200 flex items-center;
+            }
+            .expand-btn i {
+                @apply transition-transform duration-300 ease-in-out;
+            }
+            .expand-btn.expanded i {
+                @apply transform rotate-180;
+            }
+            .file-info {
+                @apply flex items-center justify-between py-1.5 px-3 bg-gray-50 rounded-md mb-1.5 hover:bg-gray-100 transition-colors duration-200;
+            }
+            .file-info-icon {
+                @apply w-6 h-6 flex items-center justify-center rounded bg-primary/10 text-primary text-xs mr-2;
+            }
+            .file-info-name {
+                @apply flex-1 truncate text-sm text-gray-700;
+            }
+            .file-info-size {
+                @apply text-xs text-gray-500;
+            }
+            .metadata-item {
+                @apply text-xs text-gray-500 flex items-center mr-4;
+            }
+            .metadata-item i {
+                @apply text-gray-400 mr-1;
+            }
+        }
+    </style>
+    <style type="text/tailwindcss">
+        /* 新增萌系加载动画 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            30% { transform: translateY(-20px) rotate(5deg); }
+            60% { transform: translateY(10px) rotate(-5deg); }
+        }
+
+        @keyframes blink {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.1); }
+        }
+
+        .moe-loader {
+            @apply relative w-32 h-32 mx-auto mb-6;
+        }
+
+        .moe-cat {
+            @apply absolute w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBmaWxsPSIjZmY4OGNjIiBkPSJNNTAgMTVjLTE5LjMgMC0zNSAxNS43LTM1IDM1IDAgMTAgNSAxOCAxMi41IDIzbC0yLjUgMTJoMjVsLTIuNS0xMmM3LjQtNSA5LjUtMTMgOS41LTIzIDAtMTkuMy0xNS43LTM1LTM1LTM1eiIvPjxjaXJjbGUgZmlsbD0iIzMzMyIgY3g9IjM1IiBjeT0iNDUiIHI9IjMiLz48Y2lyY2xlIGZpbGw9IiMzMzMiIGN4PSI2NSIgY3k9IjQ1IiByPSIzIi8+PHBhdGggZmlsbD0iI2ZmNjY2NiIgZD0iTTQ1IDY1aDEwYzAgMC0yLjUgMTAtNSAxMHMtNS0xMC01LTEweiIvPjxwYXRoIGZpbGw9IiNmZjRkOTkiIGQ9Ik00MiA4NWgxNmMzIDAgMyA1IDAgNWgtMTZjLTMgMC0zLTUgMC01eiIvPjwvc3ZnPg==')] bg-contain bg-no-repeat;
+            animation: float 1.5s ease-in-out infinite;
+        }
+
+        .moe-cat::before {
+            @apply content-[''] absolute w-4 h-2 bg-black rounded-full;
+            bottom: 28px;
+            left: 50%;
+            margin-left: -8px;
+            transform-origin: bottom;
+            animation: blink 0.6s infinite;
+        }
+    </style>
+</head>
+<body class="bg-neutral font-inter min-h-screen flex flex-col">
+    <canvas id="particleCanvas" style="position: fixed; top: 0; left: 0; z-index: -1;"></canvas>
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-cloud-upload text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-dark">综测文件处理系统</h1>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="#" class="text-gray-600 hover:text-primary transition-colors">首页</a>
+                <a href="{{ url_for('share_page') }}" class="text-gray-600 hover:text-primary transition-colors">分享下载平台</a>
+                <a href="{{ url_for('study_page') }}" class="text-gray-600 hover:text-primary transition-colors">考研番茄钟</a>
+                <a href="{{ url_for('help_page') }}" class="text-gray-600 hover:text-primary transition-colors">帮助中心</a>
+            </nav>
+            <button class="md:hidden text-gray-600 focus:outline-none">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <section class="mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 hover-scale">
+                    <h2 class="text-xl font-bold text-dark mb-4 flex items-center">
+                        <i class="fa fa-bar-chart text-primary mr-2"></i> 全站统计信息
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-primary/5 rounded-lg p-4 flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                                <i class="fa fa-file-text-o text-primary text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">全站处理批次总数</p>
+                                <p class="text-2xl font-bold text-dark" id="totalFiles">
+                                    {{ statistics['全站处理文件总数'] }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bg-primary/5 rounded-lg p-4 flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                                <i class="fa fa-clock-o text-primary text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">全站平均处理时间</p>
+                                <p class="text-2xl font-bold text-dark" id="avgTime">
+                                    {{ statistics['全站平均处理时间(秒)'] }} 秒
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 hover-scale">
+                    <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-dark mb-4 flex items-center">
+                        <i class="fa fa-upload text-primary mr-2"></i> 文件上传
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <label class="evaluation-option" for="batchRadio">
+                            <input type="radio" id="batchRadio" name="evaluationType" value="batch" checked>
+                            <span class="checkmark"></span>
+                            <div class="option-content flex items-center">
+                                <i class="fa fa-users text-primary mr-3 text-xl"></i>
+                                <div>
+                                    <h3 class="font-medium">班评</h3>
+                                    <p class="text-sm text-gray-500">无限制上传文件数量    云端存储文件  下载要密码</p>
+                                </div>
+                            </div>
+                        </label>
+                        <label class="evaluation-option" for="selfRadio">
+                            <input type="radio" id="selfRadio" name="evaluationType" value="self">
+                            <span class="checkmark"></span>
+                            <div class="option-content flex items-center">
+                                <i class="fa fa-user text-primary mr-3 text-xl"></i>
+                                <div>
+                                    <h3 class="font-medium">自评</h3>
+                                    <p class="text-sm text-gray-500">只能上传一个文件  不存储您上传的文件  无需密码</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div id="batchUploadSection" class="mt-4">
+                        <div id="batchUploadArea" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-all duration-300 hover:border-primary/70 bg-gray-50 cursor-pointer">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fa fa-cloud-upload text-6xl text-primary/70 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">拖放文件到此处</h3>
+                                <p class="text-gray-600 mb-4">或</p>
+                                <label id="batchFileLabel" for="batchFileInput" class="bg-primary text-white px-6 py-3 rounded-lg shadow-md hover:bg-primary/90 transition-all duration-200 hover:shadow-lg cursor-pointer flex items-center">
+                                    <i class="fa fa-plus mr-2"></i> 选择文件
+                                </label>
+                                <p class="text-sm text-gray-500 mt-4">支持多文件上传，仅支持 Word.docx 格式</p>
+                            </div>
+                            <input type="file" id="batchFileInput" multiple style="display: none;">
+                            <div id="batchFileList" class="mt-6"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="selfUploadSection" class="mt-4 hidden">
+                        <div id="selfUploadArea" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-all duration-300 hover:border-primary/70 bg-gray-50 cursor-pointer">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fa fa-cloud-upload text-6xl text-primary/70 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">拖放文件到此处</h3>
+                                <p class="text-gray-600 mb-4">或</p>
+                                <label for="selfFileInput" class="bg-primary text-white px-6 py-3 rounded-lg shadow-md hover:bg-primary/90 transition-all duration-200 hover:shadow-lg cursor-pointer flex items-center">
+                                    <i class="fa fa-plus mr-2"></i> 选择文件
+                                </label>
+                                <p class="text-sm text-gray-500 mt-4">仅支持 Word.docx 格式，只能上传一个文件</p>
+                            </div>
+                            <input type="file" id="selfFileInput" style="display: none;">
+                            <div id="selfFileList" class="mt-6"></div>
+                        </div>
+                    </div>
+                    
+                <button id="processBtn" onclick="startProcessing()" class="w-full mt-6 bg-secondary text-white py-3 rounded-lg shadow-md hover:bg-secondary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center space-x-2">
+                    <i class="fa fa-cog"></i>
+                    <span>开始处理文件</span>
+                </button>
+
+                </div>
+            </section>
+
+            <section id="processingSection" class="mb-8 hidden">
+                <div class="bg-white rounded-xl shadow-lg p-6 hover-scale">
+                    <h2 class="text-xl font-bold text-dark mb-4 flex items-center">
+                        <i class="fa fa-spinner fa-spin text-primary mr-2"></i> 正在处理
+                    </h2>
+                    
+                    <!-- 新增萌系动画 -->
+                    <div class="moe-loader">
+                        <div class="moe-cat"></div>
+                    </div>
+
+                    <!-- 原进度条部分保持不动 -->
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600">处理进度</span>
+                        <span id="progressPercentage" class="text-secondary font-medium">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressBar" class="progress-value" style="width: 0%"></div>
+                    </div>
+                    
+                    <!-- 修改提示文字 -->
+                    <div class="mt-4 flex justify-center">
+                        <div class="animate-pulse text-gray-500">
+                            <i class="fa fa-heart mr-1 text-pink-400"></i> 
+                            正在努力处理中，稍等一下下哦 (ฅ´ω`ฅ)
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="resultSection" class="mb-8 hidden">
+                <div class="bg-white rounded-xl shadow-lg p-6 hover-scale">
+                    <h2 class="text-xl font-bold text-dark mb-4 flex items-center">
+                        <i class="fa fa-check-circle text-secondary mr-2"></i> 处理完成
+                    </h2>
+                    <div id="resultContent" class="space-y-4 overflow-x-auto">
+                    </div>
+                    <button id="downloadBtn" onclick="downloadResult()" class="w-full mt-6 bg-primary text-white py-3 rounded-lg shadow-md hover:bg-primary/90 transition-all duration-200 flex justify-center items-center space-x-2">
+                        <i class="fa fa-download"></i>
+                        <span>下载处理结果</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 hover-scale">
+                    <h2 class="text-xl font-bold text-dark mb-4 flex items-center">
+                        <i class="fa fa-history text-primary mr-2"></i> 最近处理记录
+                    </h2>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                        <div class="text-sm text-gray-500 mb-2 md:mb-0">显示最近 5 条记录</div>
+                        <div class="flex items-center space-x-2">
+                            <div class="relative">
+                                <input type="password" id="adminPassword" placeholder="管理员密码" class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                                <i class="fa fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            <button id="refreshHistoryBtn" onclick="loadHistory()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center">
+                                <i class="fa fa-refresh mr-1"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-3" id="historyList">
+                        <div class="flex justify-center items-center py-8 text-gray-500">
+                            <i class="fa fa-clock-o mr-2"></i> 暂无处理记录
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-dark text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-sm">© 2025 Web design by 盘明东. 保留所有权利</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
+                        <i class="fa fa-github text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
+                        <i class="fa fa-twitter text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
+                        <i class="fa fa-linkedin text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM元素
+        const batchRadio = document.getElementById('batchRadio');
+        const selfRadio = document.getElementById('selfRadio');
+        const batchUploadSection = document.getElementById('batchUploadSection');
+        const selfUploadSection = document.getElementById('selfUploadSection');
+        const batchFileInput = document.getElementById('batchFileInput');
+        const batchFileList = document.getElementById('batchFileList');
+        const selfFileInput = document.getElementById('selfFileInput');
+        const selfFileList = document.getElementById('selfFileList');
+        const processBtn = document.getElementById('processBtn');
+        const processingSection = document.getElementById('processingSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const resultSection = document.getElementById('resultSection');
+        const resultContent = document.getElementById('resultContent');
+        const historyList = document.getElementById('historyList');
+        const adminPassword = document.getElementById('adminPassword');
+        
+        let isProcessing = false;
+        let lastClickTime = 0;
+        let resultUrl = '';
+        let batchFileArr = [];
+        let selfFileArr = [];
+
+        // 初始化事件监听
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHistory();
+
+            batchRadio.addEventListener('change', function() {
+                batchUploadSection.classList.remove('hidden');
+                selfUploadSection.classList.add('hidden');
+                updateProcessButtonState();
+            });
+            
+            selfRadio.addEventListener('change', function() {
+                batchUploadSection.classList.add('hidden');
+                selfUploadSection.classList.remove('hidden');
+                updateProcessButtonState();
+            });
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                batchUploadArea.addEventListener(eventName, preventDefaults, false);
+                selfUploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            batchUploadArea.addEventListener('drop', handleBatchDrop);
+            selfUploadArea.addEventListener('drop', handleSelfDrop);
+            batchFileInput.addEventListener('change', handleBatchFileSelect);
+            selfFileInput.addEventListener('change', handleSelfFileSelect);
+
+            // 添加移动菜单切换
+            document.querySelector('.md\\:hidden').addEventListener('click', function() {
+                document.querySelector('nav').classList.toggle('hidden');
+            });
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleBatchDrop(e) {
+            handleFileDrop(e, 'batch');
+        }
+
+        function handleSelfDrop(e) {
+            handleFileDrop(e, 'self');
+        }
+
+        function handleFileDrop(e, type) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (type === 'batch') {
+                handleFiles(files, batchFileArr, batchFileList, type);
+            } else {
+                handleFiles(files, selfFileArr, selfFileList, type);
+            }
+        }
+
+        function handleBatchFileSelect(e) {
+            handleFiles(e.target.files, batchFileArr, batchFileList, 'batch');
+        }
+
+        function handleSelfFileSelect(e) {
+            handleFiles(e.target.files, selfFileArr, selfFileList, 'self');
+        }
+
+        function handleFiles(files, targetArr, targetList, type) {
+            if (type === 'self' && files.length > 1) {
+                showNotification('自评只能上传一个文件', 'error');
+                return;
+            }
+            
+            for (let file of files) {
+                if (file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                    showNotification('请上传Word .docx格式的文件', 'error');
+                    continue;
+                }
+                
+                if (!targetArr.some(f => f.name === file.name)) {
+                    targetArr.push(file);
+                    displayFile(file, targetList);
+                }
+            }
+            updateProcessButtonState();
+        }
+
+        function displayFile(file, fileList) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'p-4 border border-gray-200 rounded-lg flex items-center justify-between hover:border-primary/50 transition-all duration-200 mb-3';
+            fileItem.dataset.filename = file.name;
+
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'flex items-center';
+
+            const fileIcon = document.createElement('div');
+            fileIcon.className = 'file-icon mr-4';
+            fileIcon.innerHTML = '<i class="fa fa-file-word-o text-blue-600"></i>';
+
+            const fileName = document.createElement('div');
+            fileName.className = 'flex flex-col';
+
+            const nameSpan = document.createElement('p');
+            nameSpan.className = 'font-medium text-gray-800 truncate max-w-xs md:max-w-md';
+            nameSpan.textContent = file.name;
+
+            const sizeSpan = document.createElement('p');
+            sizeSpan.className = 'text-sm text-gray-500';
+            sizeSpan.textContent = formatFileSize(file.size);
+
+            fileName.appendChild(nameSpan);
+            fileName.appendChild(sizeSpan);
+
+            fileInfo.appendChild(fileIcon);
+            fileInfo.appendChild(fileName);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'text-gray-400 hover:text-red-500 transition-colors duration-200';
+            deleteBtn.innerHTML = '<i class="fa fa-times"></i>';
+            deleteBtn.addEventListener('click', function() {
+                const fileName = this.closest('[data-filename]').dataset.filename;
+                batchFileArr = batchFileArr.filter(f => f.name !== fileName);
+                selfFileArr = selfFileArr.filter(f => f.name !== fileName);
+                fileList.removeChild(fileItem);
+                updateProcessButtonState();
+            });
+
+            fileItem.appendChild(fileInfo);
+            fileItem.appendChild(deleteBtn);
+            fileList.appendChild(fileItem);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function updateProcessButtonState() {
+            if (batchRadio.checked) {
+                processBtn.disabled = batchFileArr.length === 0;
+            } else {
+                processBtn.disabled = selfFileArr.length === 0;
+            }
+        }
+
+        async function startProcessing() {
+            const now = Date.now();
+            if (isProcessing || (now - lastClickTime < 1000)) return;
+            
+            isProcessing = true;
+            lastClickTime = now;
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 处理中...';
+
+            try {
+                // 新增：重置进度条状态
+                progressBar.style.width = '0%';
+                progressPercentage.textContent = '0%';
+
+                const formData = new FormData();
+                const evaluationType = document.querySelector('input[name="evaluationType"]:checked').value;
+
+                if (evaluationType === 'batch') {
+                    batchFileArr.forEach(file => formData.append('batchFiles', file));
+                } else {
+                    if (selfFileArr.length === 0) return;
+                    formData.append('selfFiles', selfFileArr[0]);
+                }
+                formData.append('evaluationType', evaluationType);
+
+                // 显示萌系动画
+                processingSection.classList.remove('hidden');
+                document.querySelector('.moe-cat').style.animationPlayState = 'running';
+                
+                resultSection.classList.add('hidden');
+
+                const progressInterval = startProgressSimulation();
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(progressInterval);
+
+                if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    resultUrl = result.excel_url;
+                    processingSection.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    resultContent.innerHTML = result.html_table || '<div class="p-4 bg-gray-100 rounded-lg"><p class="font-medium">处理完成</p></div>';
+                    
+                    batchFileArr = [];
+                    selfFileArr = [];
+                    batchFileList.innerHTML = '';
+                    selfFileList.innerHTML = '';
+                    updateProcessButtonState();
+                    loadHistory();
+                    showNotification('文件处理成功', 'success');
+                } else {
+                    // 新增：明确重置进度条
+                    progressBar.style.width = '0%';
+                    progressPercentage.textContent = '0%';
+                    throw new Error(result.error || '未知错误');
+                }
+            } catch (error) {
+                // 出错时暂停动画
+                document.querySelector('.moe-cat').style.animationPlayState = 'paused';
+                // 新增：强制重置界面状态
+                processingSection.classList.add('hidden');
+                progressBar.style.width = '0%';
+                progressPercentage.textContent = '0%';
+                showNotification(`处理失败: ${error.message}`, 'error');
+            } finally {
+                isProcessing = false;
+                processBtn.disabled = false;
+                processBtn.innerHTML = '<i class="fa fa-cog mr-2"></i> 开始处理文件';
+            }
+        }
+
+        function startProgressSimulation() {
+            let progress = 0;
+            return setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = `${progress}%`;
+                progressPercentage.textContent = `${Math.round(progress)}%`;
+            }, 500);
+        }
+
+        function downloadResult() {
+            if (!resultUrl) {
+                showNotification('没有可下载的结果', 'error');
+                return;
+            }
+            const evaluationType = document.querySelector('input[name="evaluationType"]:checked').value;
+            let downloadUrl = resultUrl;
+
+            if (evaluationType === 'batch') {
+                const password = adminPassword.value;
+                if (!password) {
+                    showNotification('请先输入管理员密码', 'error');
+                    return;
+                }
+                downloadUrl += `?password=${encodeURIComponent(password)}`;
+            }
+
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = '综合测评结果.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function loadHistory() {
+            try {
+                historyList.innerHTML = '<div class="flex justify-center items-center py-8"><i class="fa fa-spinner fa-spin mr-2"></i> 加载中...</div>';
+                const response = await fetch('/history');
+                const historyItems = await response.json();
+                historyList.innerHTML = '';
+
+                if (historyItems.length > 0) {
+                    historyItems.forEach(item => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-300 mb-4';
+                        
+                        // 计算总文件大小
+                        const totalSize = item.original_files.reduce((sum, file) => {
+                            // 模拟文件大小，实际应该从后端获取
+                            return sum + (Math.floor(Math.random() * 1000) + 100);
+                        }, 0);
+                        
+                        historyItem.innerHTML = `
+                            <div class="flex flex-col">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center">
+                                        <div class="file-icon mr-4">
+                                            <i class="fa fa-file-excel-o text-green-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-800">${item.file_name}</p>
+                                            <div class="flex mt-1">
+                                                <span class="metadata-item">
+                                                    <i class="fa fa-calendar"></i> ${item.timestamp}
+                                                </span>
+                                                <span class="metadata-item">
+                                                    <i class="fa fa-clock-o"></i> ${item.processing_time.toFixed(2)} 秒
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button onclick="downloadHistoryFile('${item.id}')" class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center text-sm shadow-sm">
+                                            <i class="fa fa-download mr-1"></i> 下载
+                                        </button>
+                                        <button onclick="deleteHistoryFile('${item.id}')" class="px-3 py-1.5 bg-error text-white rounded-lg hover:bg-error/90 transition-colors flex items-center text-sm shadow-sm">
+                                            <i class="fa fa-trash mr-1"></i> 删除
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="details-container" id="details-${item.id}">
+                                    <div class="details-content pl-12 pr-2 mt-3">
+                                        <p class="text-sm font-medium text-gray-700 mb-2">处理的原始文件 (${item.original_files.length}个文件，共${formatFileSize(totalSize)})</p>
+                                        <div class="space-y-1.5">
+                                            ${item.original_files.map(file => `
+                                                <div class="file-info">
+                                                    <div class="flex items-center">
+                                                        <div class="file-info-icon">
+                                                            <i class="fa fa-file-word-o"></i>
+                                                        </div>
+                                                        <span class="file-info-name">${file}</span>
+                                                    </div>
+                                                    <span class="file-info-size">${formatFileSize(Math.floor(Math.random() * 1000) + 100)}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="toggleDetails('${item.id}')" class="expand-btn mt-2 self-end">
+                                    <i class="fa fa-chevron-down ml-1"></i>
+                                    <span>展开详情</span>
+                                </button>
+                            </div>
+                        `;
+                        historyList.appendChild(historyItem);
+                    });
+                } else {
+                    historyList.innerHTML = '<div class="flex justify-center items-center py-8 text-gray-500"><i class="fa fa-clock-o mr-2"></i> 暂无处理记录</div>';
+                }
+            } catch (error) {
+                historyList.innerHTML = `<div class="flex justify-center items-center py-8 text-red-500"><i class="fa fa-exclamation-circle mr-2"></i> 加载失败: ${error.message}</div>`;
+            }
+        }
+
+        function toggleDetails(id) {
+            const details = document.getElementById(`details-${id}`);
+            const button = document.querySelector(`[onclick="toggleDetails('${id}')"]`);
+            
+            if (details.classList.contains('details-expanded')) {
+                details.classList.remove('details-expanded');
+                button.querySelector('span').textContent = '展开详情';
+                button.classList.remove('expanded');
+            } else {
+                details.classList.add('details-expanded');
+                button.querySelector('span').textContent = '收起详情';
+                button.classList.add('expanded');
+            }
+        }
+
+        function downloadHistoryFile(fileId) {
+            const password = adminPassword.value;
+            if (!password) {
+                showNotification('请先输入管理员密码', 'error');
+                return;
+            }
+
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = `/download/${fileId}?password=${encodeURIComponent(password)}`;
+            iframe.onload = function() {
+                const content = this.contentDocument.body.textContent;
+                if (content.includes('error')) {
+                    showNotification('下载失败: 密码错误或文件不存在', 'error');
+                }
+                document.body.removeChild(iframe);
+            };
+            document.body.appendChild(iframe);
+        }
+
+        async function deleteHistoryFile(fileId) {
+            const password = adminPassword.value;
+            if (!password) {
+                showNotification('请先输入管理员密码', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/delete/${fileId}?password=${encodeURIComponent(password)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const result = await response.json();
+                    showNotification(`删除失败: ${result.error}`, 'error');
+                } else {
+                    showNotification('删除成功', 'success');
+                    loadHistory();
+                }
+            } catch (error) {
+                showNotification(`请求错误: ${error.message}`, 'error');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg flex items-center z-50 transform transition-all duration-300 ${
+                type === 'success' ? 'bg-success text-white' :
+                type === 'error' ? 'bg-error text-white' : 'bg-primary text-white'
+            }`;
+            notification.innerHTML = `
+                <i class="fa ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+    <!-- 粒子系统 -->
+    <script>
+        // 检测是否为触摸设备
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        if (!isTouchDevice) { // 非触摸设备才加载粒子效果
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            let mouse = { x: null, y: null, radius: 150 };
+            let isParticlesVisible = true;
+            
+            // 颜色方案
+            const colorSchemes = {
+                blue: {
+                    particleColor: '#165DFF',
+                    lineColor: 'rgba(22, 93, 255, {opacity})'
+                },
+                green: {
+                    particleColor: '#36D399',
+                    lineColor: 'rgba(54, 211, 153, {opacity})'
+                },
+                pink: {
+                    particleColor: '#FF647C',
+                    lineColor: 'rgba(255, 100, 124, {opacity})'
+                }
+            };
+            
+            let currentColorScheme = colorSchemes.blue;
+
+            // 减慢粒子速度
+            let settings = {
+                count: 100,
+                speed: 0.5, // 速度从1降低到0.5
+                distance: 100,
+                size: 1.5
+            };
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.vx = (Math.random() - 0.5) * settings.speed;
+                    this.vy = (Math.random() - 0.5) * settings.speed;
+                    this.size = Math.random() * settings.size + 0.5;
+                    this.baseSize = this.size;
+                    this.color = currentColorScheme.particleColor;
+                }
+
+                update() {
+                    // 边界处理
+                    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+
+                    // 鼠标互动
+                    if (mouse.x && mouse.y) {
+                        const dx = mouse.x - this.x;
+                        const dy = mouse.y - this.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < mouse.radius) {
+                            const angle = Math.atan2(dy, dx);
+                            const force = (mouse.radius - dist) / mouse.radius;
+                            
+                            // 粒子远离鼠标
+                            this.x -= Math.cos(angle) * force * 0.5;
+                            this.y -= Math.sin(angle) * force * 0.5;
+                            
+                            // 鼠标附近的粒子放大
+                            this.size = Math.min(this.baseSize * 2, 5);
+                        } else {
+                            this.size = this.baseSize;
+                        }
+                    } else {
+                        this.size = this.baseSize;
+                    }
+
+                    // 限制速度
+                    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    if (speed > 1.5) { // 进一步限制最大速度
+                        this.vx = (this.vx / speed) * 1.5;
+                        this.vy = (this.vy / speed) * 1.5;
+                    }
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    
+                    // 使用渐变颜色
+                    const gradient = ctx.createRadialGradient(
+                        this.x, this.y, 0,
+                        this.x, this.y, this.size
+                    );
+                    
+                    gradient.addColorStop(0, this.color);
+                    gradient.addColorStop(1, this.color + '00');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+
+            function drawConnections() {
+                particles.forEach((a, i) => {
+                    particles.slice(i + 1).forEach(b => {
+                        const dx = a.x - b.x;
+                        const dy = a.y - b.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < settings.distance) {
+                            // 根据距离计算线条透明度
+                            const opacity = 0.6 - (dist/settings.distance) * 0.6;
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(a.x, a.y);
+                            ctx.lineTo(b.x, b.y);
+                            ctx.strokeStyle = currentColorScheme.lineColor.replace('{opacity}', opacity);
+                            ctx.lineWidth = 0.8;
+                            ctx.stroke();
+                            ctx.closePath();
+                        }
+                    });
+                });
+            }
+
+            function initParticles() {
+                particles = Array.from({ length: settings.count }, () => new Particle());
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                if (isParticlesVisible) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    particles.forEach(p => {
+                        p.update();
+                        p.draw();
+                    });
+                    
+                    drawConnections();
+                }
+            }
+
+            // 初始化
+            window.addEventListener('load', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                initParticles();
+                animate();
+            });
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                initParticles();
+            });
+
+            window.addEventListener('mousemove', e => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            window.addEventListener('mouseout', () => {
+                mouse.x = null;
+                mouse.y = null;
+            });
+        } else {
+            // 触摸设备隐藏粒子画布
+            document.getElementById('particleCanvas').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+    
