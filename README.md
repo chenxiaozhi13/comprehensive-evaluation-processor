@@ -2,7 +2,8 @@
 ![演示动画](https://github.com/chenxiaozhi13/comprehensive-evaluation-processor/raw/main/cute.gif)
 ## 项目简介
 这是一个基于 Flask 框架开发的综合测评处理系统后端。它能够自动解析学生的综合测评 Word 文档（.docx），提取学号、姓名以及各项测评成绩，然后将这些数据汇总并导出为结构化的 Excel 文件。系统支持个人自评模式和班级批量评估模式，旨在提高测评数据处理的效率和准确性。
-
+![演示1](https://github.com/chenxiaozhi13/comprehensive-evaluation-processor/raw/main/1.png)
+![演示2](https://github.com/chenxiaozhi13/comprehensive-evaluation-processor/raw/main/2.png)
 ## 🌟主要功能
 -   **Word 文档解析**：自动从 Word 文档中识别并提取学生信息和各项测评得分。
 -   **多模式评估**：支持单个学生自评和批量班级评估两种模式。
