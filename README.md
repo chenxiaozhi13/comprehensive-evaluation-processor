@@ -28,7 +28,6 @@
 git clone <YOUR_GITHUB_REPO_URL>
 cd <你的项目目录>
 ```
-**注意**：在上传到 GitHub 后，请将 `<YOUR_GITHUB_REPO_URL>` 替换为你的实际仓库地址，并将 `<你的项目目录>` 替换为你的项目名称（例如：`cd integrated_evaluation_system`）。
 
 ### 2. 安装依赖
 项目所需的所有 Python 库都已列在 `requirements.txt` 文件中。使用 pip 安装它们：
@@ -39,30 +38,26 @@ pip install -r requirements.txt
 ### 3. 运行应用程序
 确保你当前的工作目录是项目的根目录，然后运行 Flask 应用程序：
 ```bash
-python "app (4).py"
+python "app.py"
 ```
-**建议**：为了更好的可读性，你可以考虑将 `app (4).py` 重命名为 `app.py`，这样运行命令会更简洁：
 ```bash
 python app.py
 ```
-应用程序将在 `http://0.0.0.0:80` 上运行，通常你可以通过浏览器访问 `http://127.0.0.1:80` 来访问。
+应用程序将在 `http://0.0.0.0:80` 上运行，通常你可以通过浏览器访问 `http://127.0.0.1` 来访问。
 
 ## 使用说明
 1.  打开浏览器访问应用程序地址。
 2.  在页面上选择"自评模式"或"班评模式"。
 3.  上传对应的学生综合测评 Word 文档。
 4.  系统处理完成后，会显示汇总表格，并提供 Excel 文件的下载链接。
-5.  在班评模式下，下载文件或删除历史记录可能需要管理员密码（默认为 `ADMIN123`，建议在生产环境中更改）。
+5.  在班评模式下，下载文件或删除历史记录可能需要管理员密码
 
 ## 项目结构
 ```
 .
-├── app (4).py          # Flask 主应用程序文件
+├── app.py              # Flask 主应用程序文件
 ├── templates/          # HTML 模板文件目录
-│   ├── index.html
-│   ├── help.html       # 帮助页面（如果存在）
-│   ├── share.html      # 分享页面（如果存在）
-│   └── study.html      # 学习页面（如果存在）
+│    ── index.html
 ├── processed_files/    # 处理后的 Excel 文件存储目录
 ├── temp_uploads/       # 临时上传文件目录
 ├── requirements.txt    # Python 依赖列表
@@ -71,4 +66,4 @@ python app.py
 ```
 
 ## 联系方式
-如果你有任何问题或建议，欢迎通过 [你的邮箱地址] 联系我。 
+如果你有任何问题或建议，联系我。 
