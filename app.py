@@ -1,10 +1,4 @@
 # app.py
-"""
-综合测评处理系统 - Flask后端
-版本：1.7
-作者：智能助手
-最后更新：2024年5月
-"""
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
 from docx import Document
 import pandas as pd
